@@ -1,0 +1,328 @@
+---
+title: "36-402 DA Exam 1"
+author: "Madhuri Raman (madhurir)"
+date: "4/3/2020"
+output: pdf_document
+linestretch: 1.241
+fontsize: 12pt
+fontfamily: newtxtext,newtxmath
+---
+
+
+```{r setup, include = FALSE}
+## By default, do not include R source code in the PDF. We do not want to see
+## code, only your text and figures.
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+# Introduction
+
+```{r Load data, warning = FALSE, message = FALSE, results='hide'}
+library(mgcv)
+library(tidyverse)
+library(kableExtra)
+college_df <- as.data.frame(read_csv("/Users/madhuri/Desktop/36402/da1/college-data.csv"))
+
+dim(college_df)
+names(college_df)
+```
+
+**(1)**
+The purpose of this study is to investigate the value (or lack thereof) of attending a more expensive university. We are specifically interested in the relationship between the cost of attending a university and the median earnings of that university's students after graduation, controlling for students' economic statuses and prior education before attending the university. We also want to investigate how this relationship between cost of university and post-graduation earnings may differ across different types of institutions, such as public, private, and for-profit institutions. Finally, since we are students at Carnegie Mellon, we want to use our model to predict the median earnings of CMU students post-graduation.
+
+**(2)**
+In the end, we found that when we control for students' prior education, economic status, and they type of their institution, more expensive universities produce graduates with higher median earnings than their less expensive counterpart. Additionally, the type of institution one attends, whether it be private forprofit, public, or private nonprofit, does not change this relationship between price and future earnings. Finally, the expected median earnings for students at institutions like Carnegie Mellon University are between 63044.61 and 63071.49 dollars. 
+
+# Exploratory Data Analysis
+
+**(1)**
+The key variables we will be using to model median earnings of students 10 years after college are the average net price of the college, the mean SAT score of admitted students, the fraction of students at the college with a federal Pell grant, and the type of the institution (private non-profit, private for-profit, or public). We will examine the distributions of each of our continuous predictor variables, price of university, average SAT, and percent Pell grant students, with the following histograms and the distribution of our categorical variable, institution type, with a box plot.
+
+```{r Predictors histogram, warning = FALSE, message = FALSE, results = 'hide'}
+par(mfrow = c(2,2))
+
+hist(college_df$PRICE, main = "Cost of University", 
+     xlab = "Cost of University")
+hist(college_df$SAT_AVG_ALL, main = "Average SAT of Students", 
+     xlab = "Average SAT of Students")
+hist(college_df$PCTPELL, main = "Fraction of Students with \n Federal Pell Grant", 
+     xlab = "Fraction of Students with Federal Pell Grant")
+schooltype_counts <- table(college_df$CONTROL)
+text(barplot(schooltype_counts, main = "Median Types of Institutions"), y = schooltype_counts, pos = c(3,1,1), label = schooltype_counts)
+
+```
+
+The variables all look fairly normally distributed with slight skews to the right. However, this degree of skewness should not seriously impact our model since our the assumptions that go into our model do not pertain to the distributions of the variables and only pertain to the distribution of the residuals.
+ 
+**(2)**
+The response variable we will use in our model is the median earnings of students 10 years after graduation from the university. We examine its distribution in the histogram below.
+
+```{r Response histogram, warning = FALSE, message = FALSE, results = 'hide', fig.width=4, fig.height=3}
+
+hist(college_df$MD_EARN_WNE_P10, xlab = "Median Earnings", main = "Median Earnings After Graduation")
+
+```
+
+The distribution of the response variable is approximately centered around 40000 but does look rather skewed to the right. 
+
+**(3)**
+We will now examine the pairwise relationships of each predictor with our response variable. For the three continuous predictors, we will construct a pairs plot to display the scatterplots of the predictors against each other and against the response variable. 
+
+```{r Pairs plot, warning = FALSE, message = FALSE, results = 'hide', fig.height=4, fig.width = 5}
+college_df <- college_df %>% mutate()
+pairs(college_df[,c(8, 4, 5, 6)], 
+      labels = c("Median Earnings", "Price", "SAT Average", 
+                 "Percent with Pell grant"), main = "Scatterplots of Continuous Variables")
+
+
+```
+
+**(4)** 
+Based on the scatterplots, we can see a somewhat linear relationship between median earnings and all three continuous predictors. Specifically, there is a positive association between the response and price and the response and SAT average, while there is a negative association between the response and percent of students with a federal Pell grant. As price of university increases and as student SAT average increases, median earnings of students appear to increase as well. As the percent of student with a Pell grant increases, median earnings generally decrease. Specifically, based on the positive direction of the scatterplot of median earnings vs. price, we suspect that students who attend a more expensive school may earn more money after graduation than those who attend a less expensive school. 
+
+However, the associations we see are not entirely linear. For example, in the scatterplots of percent with Pell grant, the data trend appear to have a bit of an "elbow" or curve in the data. Specifically, the lower end of the distribution of Pell grant percentage have a steeper slope. Similarly, we see this behavior of a steeper slope at the right end of the distribution of SAT average in the plots of Earnings vs. SAT average and Price vs. SAT average. Additionally, in the scatterplot for median earnings vs. price, there appears to be a slight decrease in the slope, almost like a downward trend. These areas indicate potential nonlinearities in the feature space. Thus, we may consider creating an additive model with nonlinear transformations for the features price, SAT average, and percent with Pell grant.
+
+
+Finally, to examine the relationship between the categorical predictor, institution type, and the continuous response, median earnings, we can look at the following box plot of median earnings for each type of institution to compare the distributions of each individual type of institution.
+
+```{r CONTROL Boxplots, warning = FALSE, message = FALSE, results = 'hide',fig.height = 3, fig.width = 8}
+par(mfrow = c(1,2))
+
+boxplot(MD_EARN_WNE_P10 ~ CONTROL, data = college_df, main = "Earnings vs. Institution Type")
+boxplot(PRICE ~ CONTROL, data = college_df, main = "Price vs. Institution Type")
+```
+
+We see that the distributions of median earnings is not the same for the three institution types. The range of the median earnings for private nonprofit schools is larger than for public or private forprofit schools. Private nonprofit schools have a more right skewed distribution and slightly higher 50% and 75% quantiles of median earnings. However, private forprofit schools have a much higher minimum median earnings than public and private nonprofit schools. 
+
+In the boxplot of university price for each type of institution, private forprofit schools have the highest median cost of attendance, private nonprofit schools the next highest median price, and public schools the lowest median price. These distributions are a bit less skewed than those of median earnings vs. institution type. Again, the ranges of the distributions vary; private nonprofit schools have the largest range while private forprofit have the smallest range. Additionally, it is interesting to note that the maximum cost of attendance of a public institution is less than the 25% quantile of the distribution of private forprofit school costs.
+
+Based on these two boxplots, we suspect that the relationship between price and earnings will not be the same at public, private nonprofit, and private forprofit institutions. Specifically, we saw in our EDA that all three types of schools had similar median and quantile values of earnings, while in the distributions of price, private forprofit schools have a clearly higher price than private nonprofit schools, which  have a higher price than public schools. This suggests that the relationship between price and earnings may be different at different types of schools. 
+
+# Modeling & Diagnostics
+
+**(1)**
+We will construct a linear model and an additive model to answer the research questions. As we mentioned previously, we identified price, SAT average, and percent with Pell grant as the variables for which we may need a nonlinear function, based on subtle trends we could observe from their scatterplots. We will fit smoothing splines with 4 degrees of freedom to these predictors in our additive model. Note that since institution type is a categorical variable with three levels, we include two "dummy variables" or indicator variables in our model to capture the institution type variable.
+
+Linear Model: Earnings = $\beta_0$ + $\beta_1$(Price) + $\beta_2$(SAT Average) + $\beta_3$(Percent Pell) + $\beta_4$(Institution Type Nonprofit Indicator) + $\beta_5$(Institution Type Public Indicator) where $\beta_1, \beta_2, \beta_3, \beta_4, \beta_5$ are linear terms.
+
+Additive Model: Earnings = $\beta_0$ + $r_1$(Price) + $r_2$(SAT Average) + $r_3$(Percent Pell) + $r_4$(Institution Type Nonprofit Indicator) + $r_5$(Institution Type Public Indicator) where $r_1, r_2, r_3$ are smoothing splines with 4 degrees of freedom and $r_4, r_5$ are linear terms.
+
+```{r Models, warning = FALSE, message = FALSE, results = 'hide'}
+set.seed(819)
+lin_model <- lm(MD_EARN_WNE_P10 ~ PRICE + SAT_AVG_ALL + PCTPELL + CONTROL, data = college_df)
+
+add_model <- mgcv::gam(MD_EARN_WNE_P10 ~ s(PRICE, k = 4+1, fx = TRUE) + 
+                         s(SAT_AVG_ALL, k = 4+1, fx = TRUE) + 
+                         s(PCTPELL, k = 4+1, fx = TRUE) + CONTROL, data = college_df)
+
+summary(lin_model)
+summary(add_model)
+```
+
+
+**(2)**
+Our main interest with respect to the research questions is the relationship between earnings and price. However, we included 3 other variables in the model, SAT average, percent with Pell grants, and institution type, because we want to measure the relationship between earnings and price when these variables are controlled for, or kept fixed. This means that we can be sure that a change in price by an amount x will lead to a change in predicted earnings by an amount y with no influence by the other three variables in our model, SAT average, percent with Pell grant, and institution type. This is what we want to be able to report to the Department of Education when they ask if the cost of education influences median earnings for the purpose of funding federal loans. We don't want to report an answer that may actually be influenced by confounding variables such as SAT scores and prior economic status, so we need to include such variables in our model to control for them.
+
+**(3)**
+We will now examine model diagnostics to evaluate the assumptions of our models and possible improvements and modifications we can make to them.
+
+```{r Partial Response functions, warning = FALSE, message = FALSE, results = 'hide', fig.height = 3, fig.cap = "Additive Model Partial Response Functions"}
+
+par(mfrow=c(1,3))
+plot(add_model, se = TRUE, col = "blue")#, main = "Additive Model Partial Response Functions")
+
+```
+
+Based on the plots of the partial response functions of the additive model, the fit of smoothing splines to the continuous predictors in our model seems appropriate because each partial response function looks quite nonlinear.
+
+```{r Residuals vs. Fitted Values, warning = FALSE, message = FALSE, results = 'hide',fig.height = 3}
+
+par(mfrow = c(1,2))
+
+plot(fitted(lin_model), residuals(lin_model), main = "Linear Model", xlab = "Fitted Values", ylab = "Residuals")
+abline(a = 0, b = 0, col = "red")
+plot(fitted(add_model), residuals(add_model), main = "Additive Model", xlab = "Fitted Values", ylab = "Residuals")
+abline(a = 0, b = 0, col = "red")
+```
+
+```{r Residual histograms, warning = FALSE, message = FALSE, results = 'hide', fig.height = 3}
+
+par(mfrow = c(1,2))
+hist(residuals(lin_model), main = "Linear Model Residuals", xlab = "Residuals")
+hist(residuals(add_model), main = "Additive Model Residuals", xlab = "Residuals")
+```
+
+```{r Q-Q plots, warning = FALSE, message = FALSE, results = 'hide', fig.height = 3}
+
+par(mfrow=c(1,2))
+qqnorm(residuals(lin_model), main = "Linear Model")
+qqline(residuals(lin_model))
+qqnorm(residuals(add_model), main = "Additive Model")
+qqline(residuals(add_model))
+```
+
+The distributions of the residuals in the two models look extremely similar. Both distributions are right skewed, but still centered around 0 as the residuals all hover the red horizontal line. The right skewness is also apparent on the normal Q-Q plots of the residuals for both model by the points at the right tail of the  distribution lying far from the normal Q-Q line. However, in general, the residuals for both models lie well on the normal Q-Q line. The variances of the residuals in both models look fairly constant, with a very slight increase in the residuals of both models for higher fitted values approximately above 60000. Both models have several cases in the middle of their fitted-value ranges, around 50000, that have unusually high residuals. These points correspond to universities with higher median earnings of students than one would expect. However, in general, we can conclude that the assumptions of our multiple linear regression model and our additive model are satisfied in order to proceed with analysis and inference.
+
+
+**(4)**
+Now we will perform 5-fold cross-validation to determine whether the linear or additive model fits best to the data in terms of prediction error.
+
+```{r cross validation, warning = FALSE, message = FALSE, results = 'hide'}
+set.seed(819)
+n <- nrow(college_df)
+samp <- sample(rep(1:5, length = n), replace = FALSE)
+cv <- matrix(NA, 2, 5)
+rownames(cv) <- c("Linear Model", "Additive Model")
+for (k in 1:5){
+  traind <- college_df[samp != k,]
+  testd <- college_df[samp == k,]
+  # Linear Model
+  lm.out <- lm(MD_EARN_WNE_P10 ~ PRICE + SAT_AVG_ALL + PCTPELL + CONTROL, data = traind)
+  lm.out.preds <- predict(lm.out, newdata = testd)
+  cv[1,k] <- mean((testd$MD_EARN_WNE_P10 - lm.out.preds)^2)
+  # Additive Model
+  add.out <- mgcv::gam(MD_EARN_WNE_P10 ~ s(PRICE, k = 4+1, fx = TRUE) + 
+                         s(SAT_AVG_ALL, k = 4+1, fx = TRUE) + 
+                         s(PCTPELL, k = 4+1, fx = TRUE) + CONTROL, data = traind)
+  add.out.preds <- predict(add.out, newdata = testd)
+  cv[2,k] <- mean((testd$MD_EARN_WNE_P10 - add.out.preds)^2)
+}
+mse_estimates <- apply(cv, 1, FUN = mean)
+se_estimates <- (apply(cv, 1, FUN = sd))/sqrt(5)
+
+```
+
+The resulting estimate of prediction error (mean squared error) for the linear model was $`r format(mse_estimates[1], scientific = FALSE)`$ and for the additive model was $`r format(mse_estimates[2], scientific = FALSE)`$. Based on the metric of minimum prediction error, the additive model has the best fit to the data, so this is the model we will proceed with for inference. 
+
+**(5)**
+From the 5-fold cross-validation, the estimated (naively-calculated) standard error for the linear model was $`r format(se_estimates[1], scientific = FALSE)`$ and for the additive model was $`r format(se_estimates[2],scientific = FALSE)`$. The difference in cross-validation prediction errors between the two models is $`r format(mse_estimates[1] - mse_estimates[2], scientific = FALSE)`$. This difference is much smaller than one standard error estimate and we also note that both models performed with similar prediction errors and residual distributions. This compels us to proceed with a more simple model like the linear model over the more complex additive model.
+
+**(6)**
+Overall, based on the residual diagnostic plots previously created, such as the histograms of the residuals and the plots of residuals vs. fitted values, we believe that the variance of the residuals in the linear model is close to constant. However, from our previous detailed analysis of the linear model residual plots in section (3), we note that there are data points with very high positive residuals as well as some very high negative. Thus, we do not 100% trust the linear model for its mean response and distributions of noise, so we will proceed with a resample residuals bootstrap for this data.  
+
+# Results
+
+**(1)**
+Using the linear model, we will address the research question and determine whether students who attend more expensive school earn more money after graduation. To do this, we examine the regression coefficient for price in our model from Table 1. The coefficient for price in the regression is 0.3176 with a standard error estimate of 0.0454. 
+
+Thus, controlling for institution type, SAT average, and percent with Pell grants, we see that with every 1 unit increase in price of university there is a 0.3176 increase in median earnings 10 year after graduation. After conducting a t-test for this coefficient, we could reject the null hypothesis that the coefficient is equal to zero with a  p-value of 4.25e-12 , and conclude that there is a significant positive association between university price and median earnings after graduation controlling for the other variables we included in the model.
+
+```{r linear model output, warning = FALSE, message = FALSE}
+
+kable(round(summary(lin_model)$coefficients, digits = 4), caption = "Linear Regression Model Output")
+
+
+```
+
+
+**(2)**
+Now we will use our linear model to determine whether the relationship between price and median earnings is the same at public, private, and for-profit schools. In other words, we want to know if there is a statistically significant interaction between price and institution type. 
+
+Our new model including the interaction between the variables (for each of the two indicators for institution type) is:
+
+Earnings = $\beta_0$ + $\beta_1$(Price) + $\beta_2$(SAT Average) + $\beta_3$(Percent Pell) + $\beta_4$(Institution Type Nonprofit Indicator) + $\beta_5$(Institution Type Public Indicator) + $\beta_6$(Price)(Institution Type Nonprofit Indicator) + $\beta_7$(Price)(Institution Type Public Indicator) where $\beta_1, \beta_2, \beta_3, \beta_4, \beta_5, \beta_6, \beta_7$ are linear terms.
+
+```{r Interaction Model, warning = FALSE, message = FALSE, results = 'hide'}
+
+lm.out.inter <- lm(MD_EARN_WNE_P10 ~ PRICE + SAT_AVG_ALL + PCTPELL + CONTROL + PRICE:CONTROL, data = college_df)
+summary(lm.out.inter)
+
+```
+
+We will conduct a hypothesis test for the significance of the indicator terms in order to determine if there is a statistically significant interaction between price and institution type. The following are our null and alternative hypotheses for the test: $H_0: \beta_6 = \beta_7 = 0$ ; $H_A:$ at least one of $\beta_6, \beta_7$ are nonzero. The assumptions we made in conducting this test are that a linear model is appropriate for the data, the noise is independent and identically distributed from a Gaussian with constant variance, and that the noise is independent of X. 
+
+
+```{r Interaction model residual plots, warning = FALSE, message = FALSE, results = 'hide'}
+
+# par(mfrow=c(1,3))
+# plot(fitted(lm.out.inter), residuals(lm.out.inter), main = "Linear Model with \nPrice - Institution Type Interaction", xlab = "Fitted Values", ylab = "Residuals")
+# abline(a = 0, b = 0, col = "red")
+# hist(residuals(lm.out.inter), main = "Linear Model Residuals", xlab = "Residuals")
+# qqnorm(residuals(lm.out.inter))
+# qqline(residuals(lm.out.inter))
+
+
+```
+
+```{r ANOVA F test, warning = FALSE, message = FALSE, results = 'hide'}
+
+# we have lin_model (reduced model aka null) and lm.out.inter (full model aka alternative)
+
+out.null <- lin_model
+out.full <- lm.out.inter
+anova.out <- anova(out.null, out.full, test = "F")
+anova.out
+```
+
+```{r anova output, warning = FALSE, message = FALSE}
+
+kable(round(anova.out, digits = 4), caption = "ANOVA F Test Output")
+
+
+```
+
+The test statistic for our ANOVA F test is $\frac{SS_{reg} / df_{reg}}{SS_{res} / df_{res}} = 0.463$ with a p-value of 0.6295. Thus, assuming our model assumptions are correct, we conclude that there is not a significant decrease in the MSE coming from adding the interaction between price and institution type to the model that did not arise from noise. The p-value is much larger than $\alpha = 0.05$, so there is not enough evidence to reject the null hypothesis of a linear model with no interaction term. This implies that relationship between price and earnings is not significantly different at public, private, and for-profit universities.
+
+**(3)**
+We will use the original linear model (with no interaction terms) in order to build a 95% confidence interval for the mean earnings of students after graduation for a school just like Carnegie Mellon. Again, the assumptions that this confidence interval method makes are the usual multiple linear regression assumptions which are that the true model is linear, the errors are independent and identically distributed from a normal distribution with mean 0 and constant variance, and that the errors are independent of the predictors.   
+
+The 95% confidence interval for the mean earnings of students 10 years after graduation from a school like Carnegie Mellon is (61751.11, 64391.58). This means that we are 95% confident that the true mean earnings for students from a school like Carnegie Mellon is between 61751.11 and 64391.58 dollars. 
+
+```{r warning = FALSE, message = FALSE, results = 'hide'}
+
+cmu_obs <- college_df %>% filter(INSTNM == "Carnegie Mellon University")
+cmu_ytrue <- 76200
+# cmu_vals <- c(1, 31634, 1436, 0.1384, 1, 0) # 1== nonprofit, 0 == not public
+# mean_est <- as.vector(coef(lin_model) %*% cmu_vals)
+cmu_ests <- predict(lin_model, newdata = data.frame(PRICE = 31634, SAT_AVG_ALL = 1436, PCTPELL = 0.1384, CONTROL = "nonprofit"), se.fit = TRUE)
+
+ci_cmu <- cmu_ests$fit + qnorm(0.975) * c(-1,1) * cmu_ests$se.fit
+ci_cmu
+
+
+```
+
+**(4)**
+Lastly, we will compare this confidence interval to one calculated by bootstrapping by resampling residuals. With this method, we will assume that the distribution of the residuals is similar for each x and for each model with resampled noise in our bootstrap.
+
+
+```{r bootstrap CI, warning = FALSE, message = FALSE, results = 'hide'}
+set.seed(819)
+resample <- function(x){
+  sample(x, size=length(x), replace = TRUE)
+}
+
+B <- 10000
+cmu_x <- data.frame(PRICE = 31634, SAT_AVG_ALL = 1436, PCTPELL = 0.1384, CONTROL = "nonprofit")
+n <- nrow(college_df)
+newpreds <- c() # will be length B
+for (b in 1:B){
+  new.ab.df <- college_df
+  noise <- resample(residuals(lin_model))
+  new.ab.df$MD_EARN_WNE_P10 <- predict(lin_model, new.ab.df) + noise
+  new.lm.fit <-lm(MD_EARN_WNE_P10 ~ PRICE + SAT_AVG_ALL + PCTPELL + CONTROL, data = new.ab.df)
+  newpred <- predict(new.lm.fit, cmu_x) # length 1
+  newpreds <- c(newpreds, newpred)
+}
+
+truth_in_quotes <- predict(lin_model, cmu_x)
+
+bias <- mean(newpreds) - truth_in_quotes[1]
+mean_estimate <- mean(newpreds)
+se_estimate <- sd(newpreds) / sqrt(B)
+
+normal_ci <- c(mean_estimate - 2 * se_estimate, mean_estimate + 2 * se_estimate)
+
+```
+
+The bootstrapping method resulted in a normal confidence interval of (63044.61, 63071.49), which means that we are 95% confident that the true mean earnings for students from a school like Carnegie Mellon is between 63044.61 and 63071.49 dollars. This is a much narrower interval than our previously made confidence interval from the original linear model. The bootstrap method assumes that our residuals are similar for each x but resamples them, while the original confidence interval method has more assumptions regarding their mean and distribution and results in a wider interval. Thus, I would consider the bootstrap confidence interval to be more reliable based on the assumptions involved and the resulting more precise 95% confidence interval for the mean response.
+
+
+# Conclusions
+
+**(1)**
+Based on our analysis, we found that students who attend more expensive schools earn more money after graduation when controlling for the average SAT of students at their school (i.e. prior education), the percent of students at their school with a Pell grant (i.e. economic status) and the type of institution they attend (public, private for-profit, or private non-profit). We also hypothesized that this relationship between price of university and earnings would be different for different types of institutions, but in fact we did find enough evidence to prove this true. Institution type does not directly interact with or affect the relationship between price and median earnings. Finally, we found that the expected median earnings for students at institutions like Carnegie Mellon University is between 63044.61 and 63071.49 dollars. The Department of Education, which funds federal student loans, wants to use this information to understand if attending an expensive institutions is worth it in the long run; that is, will someone who attended a more expensive institution ultimately make more money? is it worth funding their loans if they decide to attend an expensive institution like Carnegie Mellon? Controlling for all other prominent factors, indeed the answer is yes. 
+
+**(2)**
+Our results are sensible. It makes sense that attending a more expensive institution can lead to higher earnings later in life, because more expensive universities generally have more and better quality resources that will prepare you for your career path. This fact does not change if someone attends a public school vs. a private for-profit school vs. a private non-profit school, because in general, all universities convert money (tuition) into resources for their students. Finally, the median earnings of students at schools like Carnegie Mellon University is around 63058.05, which is reasonable considering our main discovery. Carnegie Mellon has above average cost of attendance, so we would expect their students' median earnings to be above average as well, which they are.
+
