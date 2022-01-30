@@ -1,0 +1,48 @@
+Project Proposal:
+
+1. Project Description:
+	Name: Get Out
+	Description: The goal of the game is to get a target block out of a board that contains other vertical or horizontal blocks, and you can only move the other blocks in their given/starting direction. This game can be played by 1 or 2 players, in which players either choose to solve a randomly-generated board or can create their own.
+2. Competitive Analysis:
+	The ideas behind this game's basic setup and objective have already been thought of before. When I was little, I had a physically version of this game called Rushhour in which the blocks were all cars or trucks simulating a traffic jam. In this game, there was an included booklet of possible starting boards that you could create, and of course you were also free to place the pieces wherever you wanted to make your own. I want to include both of these options in my Python version of this game (a randomly generated board and a create-your-own board feature).
+	I also used to play this game on an app on my phone called Unblock Me. This game has Rushhour's vehicles as wooden block to maintain an overall wooden aesthetic. It also had a few different game modes which I also want to incorporate in my version of the game. First, there was a relax mode where you could just practice the game without worrying about scores or anything like that. There was also a challenge mode where you need to get the target block out in as few moves as possible. Finally there was a multiplayer mode where you get matched up against another player and you each have your own board and are racing to finish first. In this you can also see the current state of each other's board. In my multiplayer part of the game, I'm instead going to try to make a bigger board in which each player has their own target block but they have to work through the same board to get their piece out. This would likely be tricky because it will often involve screwing up the other person's strategy. Finally, I will have a help/instructions screen and if I have time, maybe a tutorial and different color scheme options for the game.
+3. Structural Plan:
+	-For the multiplayer feature, I definitely need at least two files for client and server
+	-a base file with all the modes that brings all the splash screens together
+	-a file that creates the pieces as objects (vertical or horizontal pieces) and handles the state of the board at the start of the game, with pieces placed on it (either randomly or through the DIY), and then handles the game itself (where pieces are at all times) and decides if the level has been complete or not (piece got out/won or not).
+	-probably a file to handle everything related to creating a solution, including seeing if it exists, the number of moves it took, and the animated version walkthrough of it (either keyPressed or timerFired).
+4. Algorithmic Plan:
+	The hardest part of this project is going to be creating the feature where a user can see the solution to the board they are working with. For this, I will definitely have to use backtracking. I will have to figure out the order in which I start moving pieces around since it's not very clear from a board with pieces in different directions and locations. After that, I will need to figure out what all my possible moves are, and call my function recursively, etc. A key part to this backtracking algorithm will be the undo move section, which is a strategy I often had to use when playing this game myself. Either I have the user hit a key to go step by step through the solution, or I use timerFired to have it run through automatically. Also for each board in the competitor mode, it will have the minimum possible moves for the board on the side for the user, and this will be based off of the most efficient solution given by the solution-finder function.
+5. Timeline Plan:
+	For TP1:
+		-create a board starting with the target block on the left side and directly across from it is the opening in the board that cars can leave through
+		-have pieces that I can drag up/down or left/right that do not cross the walls of the board and don't overlap, and only the target piece can leave the board
+		-implement a winning strategy, decide when the game has been won
+		-hardcode a board with a given placement of pieces for now
+		-set up the different modes I am going to have in the game, but don't need anything specific in it for now
+		**all of these goals were achieved successfully in TP1**
+	For TP2(MVP):
+		-get the solution feature to work 
+			-differentiate between relax mode and competitor mode
+		-generate a random board, see if it has a solution/min. num. moves
+	For TP3:
+		-multiplayer- definitely want
+			-incorporate sockets 
+			-use a bigger board for this with two target cars and two holes in the wall, 'gameOver' will still be when only one car is outside of the board
+		-create your own board feature - hopefully can get this done
+			-player(s) can drag pieces from a piece bank into the board (which starts with the target piece and hole in the wall), then before the start to play they can choose to see if there is a solution or not to the board they created.
+		-polish up the UI/visual aspects of the game
+		-Help screen
+		-maybe include an option to choose a color scheme? not sure
+
+6. Version Control Plan: 
+	I will be downloading my code periodically to google drive and saving my versions on there. So in the case that my computer totally crashes, I will still have my code saved on Drive and can access it from another computer. I will be numbering my versions as I go, and will always be on the latest number version. See the picture attached for what this will look like in my Drive.
+
+7. External Module List:
+	-Multiplayer (Sockets)
+	 
+8. TP2 Update:
+	I have not made any design changes to my project at this point. I'm still in the process of debugging my solution function (a lot more debugging to do than expected), but hopefully I can get that to work by TP3 since that's a core complexity of my project.
+
+9. TP3 Update:
+	After a lot of time and effort spent, I was unable to get the solution feature to work correctly, so I removed the competitor mode from my project and replaced it with a level creation feature. Additionally, for both the relax mode and level creation modes, there are now three levels for three different board size options. For my multiplayer feature, I am not using sockets, and instead created a game in which the people take turns on one computer, with timed turns, and have to race to get their piece out first without being able to move the other player's piece. The basis of that idea is the same from my previous ideas.

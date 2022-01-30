@@ -1,0 +1,57 @@
+Exception in Tkinter callback
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/tkinter/__init__.py", line 1699, in __call__
+    return self.func(*args)
+  File "/Users/madhuriraman/Desktop/15112/TP/GetOut/code12/main.py", line 511, in <lambda>
+    mousePressedWrapper(event, canvas, data))
+  File "/Users/madhuriraman/Desktop/15112/TP/GetOut/code12/main.py", line 486, in mousePressedWrapper
+    mousePressed(event, data)
+  File "/Users/madhuriraman/Desktop/15112/TP/GetOut/code12/main.py", line 71, in mousePressed
+    elif data.mode == 'relaxLevel1': relaxlevel1MousePressed(event,data)
+  File "/Users/madhuriraman/Desktop/15112/TP/GetOut/code12/main.py", line 210, in relaxlevel1MousePressed
+    rlevel1.mousePressed(event,data)
+  File "/Users/madhuriraman/Desktop/15112/TP/GetOut/code12/rlevel1.py", line 306, in mousePressed
+    if (piece.startX < event.x < piece.endX) and \
+AttributeError: 'HorizontalPiece' object has no attribute 'startX'
+Exception in Tkinter callback
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/tkinter/__init__.py", line 1699, in __call__
+    return self.func(*args)
+  File "/Users/madhuriraman/Desktop/15112/TP/GetOut/code12/main.py", line 511, in <lambda>
+    mousePressedWrapper(event, canvas, data))
+  File "/Users/madhuriraman/Desktop/15112/TP/GetOut/code12/main.py", line 486, in mousePressedWrapper
+    mousePressed(event, data)
+  File "/Users/madhuriraman/Desktop/15112/TP/GetOut/code12/main.py", line 71, in mousePressed
+    elif data.mode == 'relaxLevel1': relaxlevel1MousePressed(event,data)
+  File "/Users/madhuriraman/Desktop/15112/TP/GetOut/code12/main.py", line 210, in relaxlevel1MousePressed
+    rlevel1.mousePressed(event,data)
+  File "/Users/madhuriraman/Desktop/15112/TP/GetOut/code12/rlevel1.py", line 306, in mousePressed
+    if (piece.startX < event.x < piece.endX) and \
+AttributeError: 'HorizontalPiece' object has no attribute 'startX'
+moved rightt
+moved rightt
+moved rightt
+moved rightt
+moved rightt
+moved rightt
+moved left
+moved up
+moved up
+moved left
+moved left
+moved rightt
+moved rightt
+moved up
+moved up
+moved left
+moved left
+moved left
+moved left
+moved left
+moved left
+moved left
+moved rightt
+moved down
+moved down
+moved rightt
+moved rightt

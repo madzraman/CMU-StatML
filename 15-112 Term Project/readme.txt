@@ -1,0 +1,1 @@
+No external libraries or module are required to run this project. This project uses tkinter, which should already be installed on your computer with Python3. 
